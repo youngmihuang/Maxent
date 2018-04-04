@@ -25,7 +25,7 @@ class MaxEnt(object):
         self._initparams() # 初始化參數
         for i in range(max_iter):
             print('iter %d ...' % (i+1))
-            self.ep = self.Ep() # 計算模型分布的特徵期望
+            self.ep = self._expectedValue() # 計算模型分布的特徵期望
             self.lastw = self.w[:]
             for i, win in enumerate(self.w):
                 delta = 1.0/self.M * math.log(self.ep_[i]/ self.ep[i])
@@ -48,11 +48,11 @@ class MaxEnt(object):
 
 
 
-    def Ep(self): # 計算模型分布的特徵期望值
+    def _expectedValue(self): # 計算模型分布的特徵期望值
         ep = [0.0]*len(self.feats)
         for record in self.trainset: # 從訓練集中迭代輸出特徵
             features = record[1:]
-            prob = self.calprob(features) # 計算條件機率 P(y|x)
+            prob = self._calprob(features) # 計算條件機率 P(y|x)
             for f in features:
                 for w,l in prob:
                     if (l,f) in self.feats: # 來自訓練數據的特徵
@@ -65,23 +65,23 @@ class MaxEnt(object):
             if abs(w1-w2) >= 0.01: return False
         return True
 
-
-    # 模型預測
-    def predict(self, input): # 預測函數
-        features = input.strip().split()
-        prob = self.calprob(features)
-        prob.sort(reverse = True)
-        return prob
-
-    def probwgt(self, features, label): # 計算每個特徵權重的指數
+    def _probwgt(self, features, label): # 計算每個特徵權重的指數
         wgt = 0.0
         for f in features:
             if (label,f) in self.feats:
                 wgt += self.w[self.feats[(label,f)]]
         return math.exp(wgt)
 
-    def calprob(self, features): # 計算條件機率
-        wgts = [(self.probwgt(features,l),l) for l in self.labels]
+    def _calprob(self, features): # 計算條件機率
+        wgts = [(self._probwgt(features,l),l) for l in self.labels]
         Z = sum([w for w,l in wgts]) # 歸一化參數
         prob = [(w/Z,l) for w, l in wgts] # 機率向量
         return prob
+
+    # 模型預測
+    def predict(self, input): # 預測函數
+        features = input.strip().split()
+        prob = self._calprob(features)
+        prob.sort(reverse = True)
+        return prob
+
