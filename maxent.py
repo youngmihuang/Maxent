@@ -36,47 +36,46 @@ class MaxEnt(object):
 
     def _initparams(self): # 初始化參數
         self.size = len(self.trainset)
-        self.M = max([len(record) -1 for record in self.trainset]) # GIS訓練算法 -> train()當中的M參數
+        self.M = max([len(record) -1 for record in self.trainset]) # 訓練樣本中最大的特徵個數
 
         self.ep_ = [0,0]*len(self.feats)
         for i, f in enumerate(self.feats):
-            self.ep_[i] = float(self.feats[f])/float(self.size) # 計算經驗分布的特徵期望
-            self.feats[f] = i # 為每個特徵函數分配 id
+            counts = self.feats[f]
+            self.ep_[i] = float(counts)/float(self.size) # 計算經驗分布的特徵期望
+            self.feats[f] = i # 為每個特徵函數分配id
 
         self.w = [0.0]*len(self.feats) # 初始化權重
         self.lastw = self.w
 
-
-
-    def _expectedValue(self): # 計算模型分布的特徵期望值
+    def _expectedValue(self): # 特徵函數
         ep = [0.0]*len(self.feats)
         for record in self.trainset: # 從訓練集中迭代輸出特徵
             features = record[1:]
             prob = self._calprob(features) # 計算條件機率 P(y|x)
             for f in features:
-                for w,l in prob:
-                    if (l,f) in self.feats: # 來自訓練數據的特徵
-                        idx = self.feats[(l,f)] # 獲取特徵id
-                        ep[idx] += w* (1.0/self.size) # sum(1/N * f(y,x)*p(y|x)), p(x) = 1/N
+                for w,label in prob:
+                    if (label,f) in self.feats: # 來自訓練數據的特徵
+                        idx = self.feats[(label,f)] # 獲取特徵id
+                        ep[idx] += w* (1.0/self.size) 
         return ep
 
-    def _convergence(self,lastw,w): # 收斂-終止的條件
-        for w1, w2 in zip(lastw,w):
-            if abs(w1-w2) >= 0.01: return False
-        return True
+    def _calprob(self, features): # 計算條件機率
+        wgts = [(self._probwgt(features,label),label) for label in self.labels]
+        Z = sum([w for w,label in wgts]) 
+        prob = [(w/Z,label) for w, label in wgts] 
+        return prob
 
-    def _probwgt(self, features, label): # 計算每個特徵權重的指數
+    def _probwgt(self, features, label): # 計算每個特徵權重的weight
         wgt = 0.0
         for f in features:
             if (label,f) in self.feats:
                 wgt += self.w[self.feats[(label,f)]]
         return math.exp(wgt)
 
-    def _calprob(self, features): # 計算條件機率
-        wgts = [(self._probwgt(features,l),l) for l in self.labels]
-        Z = sum([w for w,l in wgts]) # 歸一化參數
-        prob = [(w/Z,l) for w, l in wgts] # 機率向量
-        return prob
+    def _convergence(self,lastw,w): # 收斂-終止的條件
+        for w1, w2 in zip(lastw,w):
+            if abs(w1-w2) >= 0.01: return False
+        return True
 
     # 模型預測
     def predict(self, input): # 預測函數
