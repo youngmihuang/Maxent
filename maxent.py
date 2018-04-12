@@ -50,7 +50,6 @@ class MaxEnt(object):
         for i, f in enumerate(self.feats):
             counts = self.feats[f]
             self.ep_[i] = float(counts)/float(self.size) # 計算經驗分布的特徵期望
-            self.feats_id[f] = copy.copy(self.feats[f])
             self.feats_id[f] = i # 為每個特徵函數分配id    
         self.w = [0.0]*len(self.feats) # 初始化權重
         
