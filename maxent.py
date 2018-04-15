@@ -1,7 +1,6 @@
 # coding: utf-8
 from collections import defaultdict
 import math
-import copy
 
 class MaxEnt(object):
     def __init__(self):
